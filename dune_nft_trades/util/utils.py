@@ -57,7 +57,7 @@ def get_dune_api_info(engine: sqlalchemy.engine.base.Engine = None) -> pd.DataFr
     
     else:
         query = """SELECT "address", "usage"
-            FROM dune_nft_info
+            FROM dune_api_info
             WHERE 2500 - "usage" >= 500
             ORDER BY 2 DESC
             LIMIT 1; 
@@ -68,6 +68,7 @@ def get_dune_api_info(engine: sqlalchemy.engine.base.Engine = None) -> pd.DataFr
         
         except Exception as e:
             print('Fail get dune api info')
+            print(e.__doc__)
             
         else:
             result = dune_api_info_df.iloc[0].values
