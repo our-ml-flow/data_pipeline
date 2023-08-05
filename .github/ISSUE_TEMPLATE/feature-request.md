@@ -1,7 +1,7 @@
 ---
-name: Issue Template
-about: Issue Template for pipeline repository
-title: ''
+name: Feature request
+about: Issue Feature Template for pipeline repository
+title: "[FEAT]"
 labels: ''
 assignees: ''
 
