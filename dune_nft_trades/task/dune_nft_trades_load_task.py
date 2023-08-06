@@ -11,6 +11,7 @@ def load_dune_nft_trade(engine: sqlalchemy.engine.base.Engine, dune_nft_trades_d
     
     except Exception as e:
         print("Fail load to dune_nft_trades")
+        
         print(e.__doc__)
     
     else:

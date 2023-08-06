@@ -18,6 +18,7 @@ def transform_drop_na(dune_nft_trades_df: pd.DataFrame) -> pd.DataFrame:
     extract_date = datetime.strftime(datetime.today() - timedelta(days=1), '%Y.%m.%d')
     
     print(f'{extract_date} dune nft trades drop na')
+    
     print(f'before: {before_df_length} -> after: {after_df_length}')
     
     return dune_nft_trades_df
