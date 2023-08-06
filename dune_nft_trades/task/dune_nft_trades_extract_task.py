@@ -1,5 +1,5 @@
-from requests import get, post, ConnectionError, Response
-from prefect import task, get_run_logger
+from requests import get, ConnectionError, Response
+from prefect import task
 
 import pandas as pd
 
@@ -56,7 +56,7 @@ def extract_dune_trades_value(response: Response = None) -> pd.DataFrame:
         try:
             req_json = response.json()
             
-            rows = req_json['result']['rows']
+            rows = req_json["result"]["rows"]
             
         except Exception as e:
             print(e.__doc__)

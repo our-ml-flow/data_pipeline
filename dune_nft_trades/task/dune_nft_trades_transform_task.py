@@ -1,4 +1,4 @@
-from prefect import task, get_run_logger
+from prefect import task
 from datetime import datetime, timedelta
 
 import pandas as pd

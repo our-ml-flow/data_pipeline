@@ -1,5 +1,4 @@
-from prefect_sqlalchemy import SqlAlchemyConnector
-from prefect import task, get_run_logger
+from prefect import task
 
 import sqlalchemy
 import pandas as pd
