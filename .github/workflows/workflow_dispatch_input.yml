@@ -8,6 +8,16 @@ on:
         required: true
         default: ''
 
+      main_file:
+        description: 'Input main file to deploy to'
+        required: true
+        default: 'main_flow.py'
+
+      docker_tag:
+        escription: 'Input dockerfile tag to deploy to'
+        required: true
+        default: 'test'
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -16,15 +26,17 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v3
 
-    - name: Check pwd and file list
-      run: |
-        pwd
-        ls -al
-
     - name: Check if the folder exists
       run: |
         if ! test -d ${{ github.event.inputs.pipeline }} ; then
           echo "${{ github.event.inputs.pipeline }} pipeline does not exist."
+          exit 1
+        fi
+
+    - name: Check if the main file exists
+      run: |
+        if ! test -f ${{ github.event.inputs.pipeline }}/${{ github.event.inputs.main_file }} ; then
+          echo "${{ github.event.inputs.main_file }} pipeline does not exist."
           exit 1
         fi
 
@@ -39,16 +51,16 @@ jobs:
         cd ${{ github.event.inputs.pipeline }}
         pip install -r requirements.txt
 
-    # - name: prefect cloud login
-    #   run: prefect cloud login -k ${{ secrets.PREPECT_API }} --workspace ${{ secrets.PREPECT_WORKSPACE }}
+    - name: prefect cloud login
+      run: prefect cloud login -k ${{ secrets.PREPECT_API }} --workspace ${{ secrets.PREPECT_WORKSPACE }}
 
-    # - name: Register flow to Prefect Cloud
-    #   run: python pipe_A/flow/test_flow.py
+    - name: Register flow to Prefect Cloud
+      run: python ${{ github.event.inputs.main_file }}
 
-    # - name: Log in to Docker registry
-    #   run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
+    - name: Log in to Docker registry
+      run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
 
-    # - name: Build and push Docker image
-    #   run: |
-    #     docker build -t ${{ secrets.DOCKER_REGISTRY_URL }}/mlops:test -f pipe_A/Dockerfile .
-    #     docker push ${{ secrets.DOCKER_REGISTRY_URL }}/mlops:test
+    - name: Build and push Docker image
+      run: |
+        docker build -t ${{ secrets.DOCKER_REGISTRY_URL }}/${{ github.event.inputs.pipeline }}:${{ github.event.inputs.docker_tag }} -f Dockerfile .
+        docker push ${{ secrets.DOCKER_REGISTRY_URL }}/{{ github.event.inputs.pipeline }}:${{ github.event.inputs.docker_tag }}
