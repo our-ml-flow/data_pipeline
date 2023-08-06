@@ -9,6 +9,8 @@ def transform_drop_na(dune_nft_trades_df: pd.DataFrame) -> pd.DataFrame:
     
     dune_nft_trades_df.dropna(inplace=True)
     
+    dune_nft_trades_df.sort_values('block_time')
+    
     dune_nft_trades_df.reset_index(inplace=True)
     
     after_df_length = len(dune_nft_trades_df)

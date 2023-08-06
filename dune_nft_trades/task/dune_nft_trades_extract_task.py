@@ -24,7 +24,7 @@ def get_dune_nft_trade(api_key: str = None) -> Response:
             raise ConnectionError
         
     except ConnectionError:
-        print("dune response not 200")
+        print("No dune response 200")
         return None
     
     except Exception as e:
@@ -32,7 +32,7 @@ def get_dune_nft_trade(api_key: str = None) -> Response:
         return None
     
     else:
-        print("dune response 200")
+        print("Dune response 200")
         return response
 
 @task(log_prints=True)
@@ -56,5 +56,5 @@ def extract_dune_trades_value(response: Response = None) -> pd.DataFrame:
         
         else:
             dune_nft_trades_df = pd.DataFrame(rows)
-            print("success parsing json")
+            print("Success parsing json")
             return dune_nft_trades_df
