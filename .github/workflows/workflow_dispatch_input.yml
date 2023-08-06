@@ -1,0 +1,52 @@
+name: Prefect flow CI
+
+on:
+  workflow_dispatch:
+    inputs:
+      pipeline:
+        description: 'Input folder to deploy to'
+        required: true
+        default: ''
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      run: |
+        pwd
+        ls -al
+
+    - name: Check if the folder exists
+      run: |
+        if ! test -d ${{ github.event.inputs.pipeline }} ; then
+          echo "${{ github.event.inputs.pipeline }} pipeline does not exist."
+          exit 1
+        fi
+
+    - name: Set up Python
+      uses: actions/setup-python@v3
+      with:
+        python-version: 3.10.8
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        cd ${{ github.event.inputs.pipeline }}
+        pip install -r requirements.txt
+
+    # - name: prefect cloud login
+    #   run: prefect cloud login -k ${{ secrets.PREPECT_API }} --workspace ${{ secrets.PREPECT_WORKSPACE }}
+
+    # - name: Register flow to Prefect Cloud
+    #   run: python pipe_A/flow/test_flow.py
+
+    # - name: Log in to Docker registry
+    #   run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
+
+    # - name: Build and push Docker image
+    #   run: |
+    #     docker build -t ${{ secrets.DOCKER_REGISTRY_URL }}/mlops:test -f pipe_A/Dockerfile .
+    #     docker push ${{ secrets.DOCKER_REGISTRY_URL }}/mlops:test
