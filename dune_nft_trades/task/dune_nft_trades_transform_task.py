@@ -1,4 +1,4 @@
-from prefect import task, get_run_logger
+from prefect import task
 from datetime import datetime, timedelta
 
 import pandas as pd
@@ -9,6 +9,8 @@ def transform_drop_na(dune_nft_trades_df: pd.DataFrame) -> pd.DataFrame:
     
     dune_nft_trades_df.dropna(inplace=True)
     
+    dune_nft_trades_df.sort_values('block_time')
+    
     dune_nft_trades_df.reset_index(inplace=True)
     
     after_df_length = len(dune_nft_trades_df)
@@ -16,6 +18,7 @@ def transform_drop_na(dune_nft_trades_df: pd.DataFrame) -> pd.DataFrame:
     extract_date = datetime.strftime(datetime.today() - timedelta(days=1), '%Y.%m.%d')
     
     print(f'{extract_date} dune nft trades drop na')
+    
     print(f'before: {before_df_length} -> after: {after_df_length}')
     
     return dune_nft_trades_df
