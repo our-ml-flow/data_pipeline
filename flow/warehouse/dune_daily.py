@@ -1,8 +1,12 @@
-from module.utils.utils import get_sql_engine, get_json_block, get_dune_api_info, log_dune_datapoint, update_dune_api_info_usage
-from module.warehouse.dune_daily.task.extract_task import get_dune_nft_trade, extract_dune_trades_value
-from module.warehouse.dune_daily.task.transform_task import transform_drop_na, reset_columns
-from module.warehouse.dune_daily.task.load_task import load_dune_nft_trade
+import os
+import sys
 
+repo_dir = os.path.abspath(__file__).split('/flow')[0]
+print(repo_dir)
+sys.path.append(f'{repo_dir}')
+
+from module.utils import get_sql_engine, get_json_block, get_dune_api_info, log_dune_datapoint, update_dune_api_info_usage
+from module.warehouse.dune_daily.task import get_dune_nft_trade, extract_dune_trades_value, transform_drop_na, reset_columns, load_dune_nft_trade
 from prefect.deployments import Deployment
 from prefect.server.schemas.schedules import CronSchedule
 from prefect import flow
