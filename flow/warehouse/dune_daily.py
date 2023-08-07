@@ -12,7 +12,7 @@ from prefect.server.schemas.schedules import CronSchedule
 from prefect import flow
 from datetime import datetime, timedelta
 
-@flow(name='Initialize setting_flow', log_prints=True)
+@flow(name='Initialize_setting_flow', log_prints=True)
 def init_sql_setting(sql_block_name: str, json_block_name: str) -> tuple:
     database_block = get_sql_engine(sql_block_name)
     
@@ -32,8 +32,9 @@ def dune_etl_flow(init_info: tuple) -> tuple|None:
     
     datapoint = log_dune_datapoint(response)
     
+    extract_date = datetime.strftime(datetime.today() - timedelta(days=1), '%Y.%m.%d')
+    
     if datapoint == None:
-        extract_date = datetime.strftime(datetime.today() - timedelta(days=1), '%Y.%m.%d')
         
         print(f'{extract_date} required datapoint is more than {api_usage}')
         
@@ -56,7 +57,7 @@ def dune_etl_flow(init_info: tuple) -> tuple|None:
 
     update_dune_api_info_usage(engine, api_address, api_usage, datapoint)
     
-@flow(name='Main_flow', log_prints=True)
+@flow(name='Dune_daily_warehouse_flow', log_prints=True)
 def dune_nft_trades():
     sql_block_name = 'gcp-mlops-sql-postgres'
     
