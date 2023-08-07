@@ -6,6 +6,6 @@ read -p "Enter Prefect Workspace: " WORK_SPACE
 
 read -p "Enter Prefect Workspace: " WORK_QUEUE
 
-prefect cloud login -k "$PREFECT_API" --workspace "$WORK_SPACE"
+prefect cloud login --key "$PREFECT_API" --workspace "$WORK_SPACE"
 
 prefect agent start --work-queue "$WORK_QUEUE"
