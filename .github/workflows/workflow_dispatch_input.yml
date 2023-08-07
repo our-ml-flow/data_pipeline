@@ -4,17 +4,22 @@ on:
   workflow_dispatch:
     inputs:
       pipeline:
-        description: 'Input folder to deploy to'
+        description: 'Input pipeline name to deploy to'
+        required: true
+        default: ''
+        
+      deploy_path:
+        description: 'Input path to deploy to'
+        required: true
+        default: 'flow/'
+
+      deploy_file:
+        description: 'Input file to deploy to'
         required: true
         default: ''
 
-      main_file:
-        description: 'Input main file to deploy to'
-        required: true
-        default: 'main_flow.py'
-
       docker_tag:
-        escription: 'Input dockerfile tag to deploy to'
+        description: 'Input dockerfile tag to deploy to'
         required: true
         default: 'test'
 
@@ -28,15 +33,15 @@ jobs:
 
     - name: Check if the folder exists
       run: |
-        if ! test -d ${{ github.event.inputs.pipeline }} ; then
-          echo "${{ github.event.inputs.pipeline }} pipeline does not exist."
+        if ! test -d ${{ github.event.inputs.deploy_path }} ; then
+          echo "${{ github.event.inputs.deploy_path }} does not exist."
           exit 1
         fi
 
     - name: Check if the main file exists
       run: |
-        if ! test -f ${{ github.event.inputs.pipeline }}/${{ github.event.inputs.main_file }} ; then
-          echo "${{ github.event.inputs.main_file }} pipeline does not exist."
+        if ! test -f ${{ github.event.inputs.deploy_path }}/${{ github.event.inputs.deploy_file }} ; then
+          echo "${{ github.event.inputs.deploy_file }} does not exist."
           exit 1
         fi
 
@@ -48,14 +53,15 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        cd ${{ github.event.inputs.pipeline }}
         pip install -r requirements.txt
 
     - name: prefect cloud login
       run: prefect cloud login -k ${{ secrets.PREPECT_API }} --workspace ${{ secrets.PREPECT_WORKSPACE }}
 
     - name: Register flow to Prefect Cloud
-      run: python ${{ github.event.inputs.main_file }}
+      run: |
+        cd ${{ github.event.inputs.deploy_path }}
+        python ${{ github.event.inputs.deploy_file }}
 
     - name: Log in to Docker registry
       run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
