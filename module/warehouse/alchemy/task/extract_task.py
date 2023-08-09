@@ -22,7 +22,7 @@ def get_owners(query:str) -> list:
     return owners
 
 
-def create_contract_for_owner(owners:list,ALCHEMY_API_KEY:str) -> Union[pd.DataFrame, None]:
+def create_contract_for_owner(owners:list,ALCHEMY_API_KEY:str):
     df_contract_for_owner=pd.DataFrame()
     data_list=[]
 
