@@ -6,6 +6,7 @@ import time
 import requests
 import json
 from sqlalchemy import text
+from prefect_sqlalchemy import SqlAlchemyConnector
 from typing import Union, Tuple, Optional
 
 
@@ -146,6 +147,38 @@ def create_collection_for_owner(owners:list,ALCHEMY_API_KEY:str):
     df_collection_for_owner['data_created_at'] = pd.Timestamp.utcnow().isoformat()
 
     return df_collection_for_owner
+
+@task(log_prints=True)
+def get_db_data(query) -> list:
+    engine=SqlAlchemyConnector.load("gcp-mlops-sql-postgres").get_engine()
+    connection = engine.connect()
+    owners=[]
+    try:
+        result = connection.execute(text(query))
+        rows=result.fetchall()
+        owners = [row.owner for row in rows]
+        
+    except Exception as e:
+        print("error", e)
+    return owners
+
+
+@task(log_prints=True)
+def montly_top100(month:str, start, end, limit:int):
+    engine=SqlAlchemyConnector.load("gcp-mlops-sql-postgres").get_engine()
+    connection = engine.connect()
+    df_jun_top100 = pd.DataFrame()
+
+    try:
+        result = connection.execute(text(f"WITH {month} AS( SELECT * FROM dune_nft_trades WHERE block_time BETWEEN '{start}' AND '{end}') SELECT DISTINCT buyer, sum(amount_usd) amt FROM {month} GROUP BY buyer ORDER BY amt DESC LIMIT {limit};"))
+        rows=result.fetchall()
+        df_jun_top100['buyer'] = [row.buyer for row in rows]
+        df_jun_top100['amt'] = [row.amt for row in rows]
+
+        print(df_jun_top100,len(df_jun_top100))
+    except Exception as e:
+        print("error", e)
+    return df_jun_top100
 
 
 #@task
