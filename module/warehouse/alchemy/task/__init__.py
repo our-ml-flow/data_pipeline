@@ -1,2 +1,2 @@
-from .extract_task import get_owners,create_owners_for_contract,create_collection_for_owner
+from .extract_task import get_owners,create_owners_for_contract,create_collection_for_owner,get_db_data
 from .load_task import load_to_db
