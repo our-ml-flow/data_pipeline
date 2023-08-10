@@ -5,8 +5,8 @@ repo_dir = os.path.abspath(__file__).split('/flow')[0]
 print(repo_dir)
 sys.path.append(f'{repo_dir}')
 
-from module.utils import get_sql_engine, get_json_block, get_db_data
-from module.warehouse.alchemy.task import create_collection_for_owner,create_owners_for_contract,load_to_db
+from module.utils import get_sql_engine, get_json_block
+from module.warehouse.alchemy.task import create_collection_for_owner,create_owners_for_contract,load_to_db,get_db_data
 
 from prefect import flow
 from prefect.deployments import Deployment
