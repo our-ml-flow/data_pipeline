@@ -50,7 +50,7 @@ def load_wash_trade_wallet(engine: sqlalchemy.engine.base.Engine):
     else:
         try:
             # test 종료 이후 테이블 교체 필요
-            wash_trade_df.to_sql("wash_trade_wallet_month_test", engine, if_exists='append', index=False)
+            wash_trade_df.to_sql("wash_trade_wallet_month", engine, if_exists='append', index=False)
             
         except Exception as e2:
             print("Fail load to wash_trade_wallet_month")
@@ -66,7 +66,7 @@ def load_black_list(engine: sqlalchemy.engine.base.Engine):
         SELECT
             start_date,
             UNNEST(ARRAY[participant1, participant2]) AS participant
-        FROM wash_trade_wallet_month_test
+        FROM wash_trade_wallet_month
         WHERE start_date = DATE('{formatted_date}')
     ),
     distinct_wallet AS (
@@ -98,7 +98,7 @@ def load_black_list(engine: sqlalchemy.engine.base.Engine):
             # test 종료 이후 테이블 교체 필요
             conn = engine.connect()
     
-            table = Table('black_list_test', MetaData(), autoload_with=engine)
+            table = Table('black_list', MetaData(), autoload_with=engine)
             
             stmt = insert(table).values(black_list_df.to_dict(orient="records"))
             
@@ -111,4 +111,4 @@ def load_black_list(engine: sqlalchemy.engine.base.Engine):
             conn.close()
             
         except Exception as e2:
-            print("Fail load to black_list_test")
+            print("Fail load to black_list")
