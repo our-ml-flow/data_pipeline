@@ -27,8 +27,8 @@ if __name__=="__main__":
         flow=wash_trade,
         name="Wash trade Flow Deployment",
         version=1.0,
-        work_queue_name="dune-agent",
-        schedule=(CronSchedule(cron="0 11 1 * *", timezone="Asia/Seoul"))
+        work_queue_name="wash_trade-agent",
+        schedule=(CronSchedule(cron="40 10 1 * *", timezone="Asia/Seoul"))
     )
     
     deployment.apply()
