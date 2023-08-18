@@ -31,197 +31,121 @@ def get_alchemy_json_block(block_name: str) -> str|None:
 @task(log_prints=True)
 def load_data_table(engine):   
 
-    query = "SELECT DISTINCT owner FROM alchemy_owners_for_contract LIMIT 200;"
-
+    #query = "SELECT DISTINCT owner_address FROM alchemy_owners_for_contract LIMIT 200;"
+    query = " SELECT DISTINCT owner_address FROM alchemy_collection_for_buyer UNION SELECT DISTINCT owner_address FROM alchemy_collection_for_seller"
     owner_address_df = pd.read_sql(query, engine)
-
-    # owner_addresses = owner_address_df['buyer'].values.tolist()
 
     return owner_address_df
 
 
-# @task(log_prints=True)
-# def extract_nfts(ALCHEMY_API_KEY, owner_address):
+def extract_nfts(api_variable):
 
-#     url = f"https://eth-mainnet.g.alchemy.com/nft/v2/{ALCHEMY_API_KEY}/getNFTs?owner={owner_address}&withMetadata=true&orderBy=transferTime&pageSize=100"
+    ALCHEMY_API_KEY, owner_address = api_variable
 
-#     response = requests.get(url)
+    url = f"https://eth-mainnet.g.alchemy.com/nft/v2/{ALCHEMY_API_KEY}/getNFTs?owner={owner_address}&withMetadata=true&orderBy=transferTime&pageSize=100"
 
-#     if response.status_code == 200:
-#         data = response.json()
-#         page_key = data.get("pageKey")
-#         total_count = data.get("totalCount")  # 총 NFT 개수
-#         block_hash = data.get("blockHash")    # 블록 해시
-#         owned_nfts = data.get("ownedNfts", [])
-#         ################################################################
-#         print(f"{owner_address} -> response.status_code == 200")
-#         ################################################################
-#         data_created_at = datetime.datetime.utcnow()  # 생성 시간
-#         nft_list = []
+    response = requests.get(url)
 
-#         for nft in owned_nfts:   
-#             nft_info = {
-#                 "data_created_at": data_created_at,
-#                 "contract_address": nft.get("contract", {}).get("address", "None"),
-#                 "token_id": nft.get("id", {}).get("tokenId", "None"),
-#                 "tokenType": nft.get("id", {}).get("tokenMetadata", "None").get("tokenType", "None"),
-#                 "balance": nft.get("balance", "None"),
-#                 "acquired_at": nft.get("acquiredAt", {}).get("blockTimestamp", "None"),
-#                 "block_number": nft.get("acquiredAt", {}).get("blockNumber", "None"),
-#                 "title": nft.get("title", "None"),
-#                 "description": nft.get("description", "None"),
-#                 "token_uri": nft.get("tokenUri", {}).get("gateway", "None"),
-#                 "media": nft.get("media", "None"),
-#                 "metadata_name": nft.get("metadata", "None"),
-#                 "time_last_updated": nft.get("timeLastUpdated", "None"),
-#                 "contract_metadata": nft.get("contractMetadata", "None"),
-#                 "total_count": total_count,
-#                 "block_hash": block_hash
-#             }
-#             nft_list.append(nft_info)
+    if response.status_code == 200:
+        data = response.json()
+        page_key = data.get("pageKey")
+        total_count = data.get("totalCount")  # 총 NFT 개수
+        block_hash = data.get("blockHash")    # 블록 해시
+        owned_nfts = data.get("ownedNfts", [])
+        ################################################################
+        print(f"{owner_address} -> response.status_code == 200")
+        ################################################################
+        data_created_at = datetime.datetime.utcnow()  # 생성 시간
+        nft_list = []
+
+        for nft in owned_nfts:   
+            nft_info = {
+                "data_created_at": data_created_at,
+                "owner_address": owner_address,
+                "contract_address": nft.get("contract", {}).get("address", "None"),
+                "token_id": nft.get("id", {}).get("tokenId", "None"),
+                "tokenType": nft.get("id", {}).get("tokenMetadata", "None").get("tokenType", "None"),
+                "balance": nft.get("balance", "None"),
+                "acquired_at": nft.get("acquiredAt", {}).get("blockTimestamp", "None"),
+                "block_number": nft.get("acquiredAt", {}).get("blockNumber", "None"),
+                "title": nft.get("title", "None"),
+                "description": nft.get("description", "None"),
+                "token_uri": nft.get("tokenUri", {}).get("gateway", "None"),
+                "media": nft.get("media", "None"),
+                "metadata_name": nft.get("metadata", "None"),
+                "time_last_updated": nft.get("timeLastUpdated", "None"),
+                "contract_metadata": nft.get("contractMetadata", "None"),
+                "total_count": total_count,
+                "block_hash": block_hash
+            }
+            nft_list.append(nft_info)
         
-#         # pageKey가 있는 경우 다음 페이지 요청
-#         while page_key:
-#             ################################################################
-#             print(f"page_key: {page_key}")
-#             ################################################################
-#             next_url = f"{url}&pageKey={page_key}"
-#             next_response = requests.get(next_url)
-#             if next_response.status_code == 200:
-#                 next_data = next_response.json().get("data", {})
-#                 page_key = next_data.get("pageKey")
-#                 owned_nfts = next_data.get("ownedNfts", [])
+        # pageKey가 있는 경우 다음 페이지 요청
+        while page_key:
+            ################################################################
+            print(f"page_key: {page_key}")
+            ################################################################
+            next_url = f"{url}&pageKey={page_key}"
+            next_response = requests.get(next_url)
+            if next_response.status_code == 200:
+                next_data = next_response.json().get("data", {})
+                page_key = next_data.get("pageKey")
+                owned_nfts = next_data.get("ownedNfts", [])
                 
-#                 for nft in owned_nfts:
-#                     nft_info = {
-#                         "data_created_at": data_created_at,
-#                         "contract_address": nft.get("contract", {}).get("address", "None"),
-#                         "token_id": nft.get("id", {}).get("tokenId", "None"),
-#                         "token_type": nft.get("id", {}).get("tokenMetadata", "None").get("tokenType", "None"),
-#                         "balance": nft.get("balance", "None"),
-#                         "acquired_at": nft.get("acquiredAt", {}).get("blockTimestamp", "None"),
-#                         "block_number": nft.get("acquiredAt", {}).get("blockNumber", "None"),
-#                         "title": nft.get("title", "None"),
-#                         "description": nft.get("description", "None"),
-#                         "token_uri": nft.get("tokenUri", {}).get("gateway", "None"),
-#                         "media": nft.get("media", "None"),
-#                         "metadata_name": nft.get("metadata", "None"),
-#                         "time_last_updated": nft.get("timeLastUpdated", "None"),
-#                         "contract_metadata": nft.get("contractMetadata", "None"),
-#                     }
-#                     nft_list.append(nft_info)
-#                     ################################################################
-#                     print(f"******{owner_address} -> nft_info append******")
-#                     ################################################################
+                for nft in owned_nfts:
+                    nft_info = {
+                        "data_created_at": data_created_at,
+                        "owner_address": owner_address,
+                        "contract_address": nft.get("contract", {}).get("address", "None"),
+                        "token_id": nft.get("id", {}).get("tokenId", "None"),
+                        "token_type": nft.get("id", {}).get("tokenMetadata", "None").get("tokenType", "None"),
+                        "balance": nft.get("balance", "None"),
+                        "acquired_at": nft.get("acquiredAt", {}).get("blockTimestamp", "None"),
+                        "block_number": nft.get("acquiredAt", {}).get("blockNumber", "None"),
+                        "title": nft.get("title", "None"),
+                        "description": nft.get("description", "None"),
+                        "token_uri": nft.get("tokenUri", {}).get("gateway", "None"),
+                        "media": nft.get("media", "None"),
+                        "metadata_name": nft.get("metadata", "None"),
+                        "time_last_updated": nft.get("timeLastUpdated", "None"),
+                        "contract_metadata": nft.get("contractMetadata", "None"),
+                        "total_count": total_count,
+                        "block_hash": block_hash
+                    }
+                    nft_list.append(nft_info)
+                    ################################################################
+                    print(f"******{owner_address} -> nft_info append******")
+                    ################################################################
                 
-#         return nft_list
+        return nft_list
     
-#     else:
-#         print(f"Error: Request failed for {owner_address}")
+    else:
+        print(f"Error: Request failed for {owner_address}")
+        return []
 
 
 @task(log_prints=True)
-def make_dataframe(engine, ALCHEMY_API_KEY, owner_address_df):
+def make_dataframe(ALCHEMY_API_KEY, owner_address_df):
 
-    owner_addresses = owner_address_df['owner'].values.tolist()
+    owner_addresses = owner_address_df['owner_address'].values.tolist()
 
-    def extract_nfts(ALCHEMY_API_KEY, owner_address):
+    api_variables = zip([ALCHEMY_API_KEY]*len(owner_addresses), owner_addresses)
 
-        url = f"https://eth-mainnet.g.alchemy.com/nft/v2/{ALCHEMY_API_KEY}/getNFTs?owner={owner_address}&withMetadata=true&orderBy=transferTime&pageSize=100"
-        time.sleep(0.5)
-        response = requests.get(url)
-
-        if response.status_code == 200:
-            data = response.json()
-            page_key = data.get("pageKey")
-            total_count = data.get("totalCount")  # 총 NFT 개수
-            block_hash = data.get("blockHash")    # 블록 해시
-            owned_nfts = data.get("ownedNfts", [])
-            ################################################################
-            print(f"{owner_address} -> response.status_code == 200")
-            ################################################################
-            data_created_at = datetime.datetime.utcnow()  # 생성 시간
-            nft_list = []
-
-            for nft in owned_nfts:   
-                nft_info = {
-                    "data_created_at": data_created_at,
-                    "contract_address": nft.get("contract", {}).get("address", "None"),
-                    "token_id": nft.get("id", {}).get("tokenId", "None"),
-                    "tokenType": nft.get("id", {}).get("tokenMetadata", "None").get("tokenType", "None"),
-                    "balance": nft.get("balance", "None"),
-                    "acquired_at": nft.get("acquiredAt", {}).get("blockTimestamp", "None"),
-                    "block_number": nft.get("acquiredAt", {}).get("blockNumber", "None"),
-                    "title": nft.get("title", "None"),
-                    "description": nft.get("description", "None"),
-                    "token_uri": nft.get("tokenUri", {}).get("gateway", "None"),
-                    "media": nft.get("media", "None"),
-                    "metadata_name": nft.get("metadata", "None"),
-                    "time_last_updated": nft.get("timeLastUpdated", "None"),
-                    "contract_metadata": nft.get("contractMetadata", "None"),
-                    "total_count": total_count,
-                    "block_hash": block_hash
-                }
-                nft_list.append(nft_info)
-            
-            # pageKey가 있는 경우 다음 페이지 요청
-            while page_key:
-                ################################################################
-                print(f"page_key: {page_key}")
-                ################################################################
-                next_url = f"{url}&pageKey={page_key}"
-                next_response = requests.get(next_url)
-                if next_response.status_code == 200:
-                    next_data = next_response.json().get("data", {})
-                    page_key = next_data.get("pageKey")
-                    owned_nfts = next_data.get("ownedNfts", [])
-                    
-                    for nft in owned_nfts:
-                        nft_info = {
-                            "data_created_at": data_created_at,
-                            "contract_address": nft.get("contract", {}).get("address", "None"),
-                            "token_id": nft.get("id", {}).get("tokenId", "None"),
-                            "token_type": nft.get("id", {}).get("tokenMetadata", "None").get("tokenType", "None"),
-                            "balance": nft.get("balance", "None"),
-                            "acquired_at": nft.get("acquiredAt", {}).get("blockTimestamp", "None"),
-                            "block_number": nft.get("acquiredAt", {}).get("blockNumber", "None"),
-                            "title": nft.get("title", "None"),
-                            "description": nft.get("description", "None"),
-                            "token_uri": nft.get("tokenUri", {}).get("gateway", "None"),
-                            "media": nft.get("media", "None"),
-                            "metadata_name": nft.get("metadata", "None"),
-                            "time_last_updated": nft.get("timeLastUpdated", "None"),
-                            "contract_metadata": nft.get("contractMetadata", "None"),
-                        }
-                        nft_list.append(nft_info)
-                        ################################################################
-                        print(f"******{owner_address} -> nft_info append******")
-                        ################################################################
-                    
-            return nft_list
-        
-        else:
-            print(f"Error: Request failed for {owner_address}")
-
-    
     nft_list = []
     with concurrent.futures.ThreadPoolExecutor(4) as executor:
-        results = executor.map(extract_nfts, [ALCHEMY_API_KEY] * len(owner_addresses), owner_addresses)
-        if results is None:
-            return None
-        
-        for result, owner_address in zip(results, owner_addresses):
-            for nft_info in result:
-                nft_info["owner_address"] = owner_address  # 이 부분을 추가해 딕셔너리에 owner_address 추가
-                nft_list.append(nft_info)
-                ################################################################
-                time.sleep(0.1)
-                print(f"nft_list extend")
-
-                ################################################################
+        results = executor.map(extract_nfts, api_variables)
+        for result in results:
+            nft_list.extend(result)
+            print("#########################")
+            print("nft_list extend")
+            print("#########################")
+    # print(nft_list)
 
     # 데이터프레임 생성
-    alchemy_get_nfts_df = pd.DataFrame(nft_list)
+    # df = pd.DataFrame.from_dict(nft_list)
+
+    # 데이터프레임 생성
+    alchemy_get_nfts_df = pd.DataFrame.from_dict(nft_list)
     print(alchemy_get_nfts_df)
 
     # JSON 데이터가 들어가는 컬럼을 문자열로 변환

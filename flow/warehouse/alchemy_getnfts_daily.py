@@ -6,7 +6,7 @@ print(repo_dir)
 sys.path.append(f'{repo_dir}')
 
 from module.utils import get_sql_engine, get_json_block
-from module.warehouse.alchemy_getnfts_daily.task import get_alchemy_json_block,load_data_table,extract_nfts,make_dataframe,load_to_db
+from module.warehouse.alchemy_getnfts_daily.task import get_alchemy_json_block,load_data_table,make_dataframe,load_to_db
 
 from prefect import flow
 from prefect.deployments import Deployment
@@ -20,8 +20,9 @@ from datetime import datetime
 def alchemy_getnfts_daily():
     engine = get_sql_engine('gcp-mlops-sql-postgres').get_engine()  
     ALCHEMY_API_KEY = get_alchemy_json_block('alchemy-api-key')
-    owner_addresses = load_to_db(engine)
-    alchemy_get_nfts_df = make_dataframe(engine, ALCHEMY_API_KEY, owner_addresses)
+    owner_address_df = load_data_table(engine)
+    alchemy_get_nfts_df = make_dataframe(ALCHEMY_API_KEY, owner_address_df)
+    load_to_db(engine, alchemy_get_nfts_df, 'test_alchemy_get_nfts')
 
 
 if __name__=='__main__':
@@ -30,7 +31,7 @@ if __name__=='__main__':
         flow=alchemy_getnfts_daily,
         name='Alchemy_getnfts_daily_warehouse_flow_Deployment',
         version=1.0,
-        work_queue_name='alchemy-getnft-agent',
+        work_queue_name='alchemy-test-getnft-agent',
         schedule=(CronSchedule(cron="30 11 * * *", timezone="Asia/Seoul"))
     )
     deployment.apply()
