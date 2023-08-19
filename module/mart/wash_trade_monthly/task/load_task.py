@@ -49,7 +49,6 @@ def load_wash_trade_wallet(engine: sqlalchemy.engine.base.Engine):
         
     else:
         try:
-            # test 종료 이후 테이블 교체 필요
             wash_trade_df.to_sql("wash_trade_wallet_month", engine, if_exists='append', index=False)
             
         except Exception as e2:
@@ -95,7 +94,6 @@ def load_black_list(engine: sqlalchemy.engine.base.Engine):
         
     else:
         try:
-            # test 종료 이후 테이블 교체 필요
             conn = engine.connect()
     
             table = Table('black_list', MetaData(), autoload_with=engine)
