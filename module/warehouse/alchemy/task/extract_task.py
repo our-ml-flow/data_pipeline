@@ -1,7 +1,7 @@
 import pandas as pd
 from concurrent.futures import ThreadPoolExecutor
 from prefect import task
-from datetime import timezone,datetime
+from datetime import timezone,datetime,timedelta
 import time
 import requests
 import json
@@ -10,19 +10,9 @@ from prefect_sqlalchemy import SqlAlchemyConnector
 from typing import Union, Tuple, Optional
 
 
-@task(log_prints=True)
-def get_owners(query:str) -> list:
-    #query='select buyer from jul_2023_top100'
-
-    engine = SqlAlchemyConnector.load('gcp-mlops-sql-postgres').get_engine()
-    conn = engine.connect()
-    result = conn.execute(text(query))
-    rows=result.fetchall()
-    owners=[row.buyer for row in rows] 
-    return owners
 
 @task(log_prints=True)
-def create_owners_for_contract(contracts:list, ALCHEMY_API_KEY:str):
+def create_owners_for_contract(contracts:list, ALCHEMY_API_KEY:str) -> pd.DataFrame():
     #getOwnersForCollection	CU:600	Throughput CU:20
     #Free 330cu. 16request/sec
     data_list=[]
@@ -47,13 +37,13 @@ def create_owners_for_contract(contracts:list, ALCHEMY_API_KEY:str):
             print(e)
             print(f"Error: Request failed for {contract}")
 
-    with ThreadPoolExecutor(8) as executor:
+    with ThreadPoolExecutor(16) as executor:
         futures = [executor.submit(fetch_data, contract) for contract in contracts]
         
         for future, contract in zip(futures, contracts):
             owners_list, page_key = future.result()
             if page_key == None:
-                data = {'owner':owners_list,'contract':[contract]*len(owners_list)}
+                data = {'owner_address':owners_list,'contract':[contract]*len(owners_list)}
                 df_owner=pd.DataFrame(data)
                 df_owners_for_contract = pd.concat([df_owners_for_contract,df_owner])
                 print('******complete : no pagenation******')
@@ -63,12 +53,13 @@ def create_owners_for_contract(contracts:list, ALCHEMY_API_KEY:str):
                 owners_list, page_key = fetch_data(contract, page_key)
             
                 data_list.extend(owners_list)
-                data={'owner':data_list,'contract':[contract]*len(data_list)}
+                data={'owner_address':data_list,'contract':[contract]*len(data_list)}
                 df_owner=pd.DataFrame(data)
                 df_owners_for_contract = pd.concat([df_owners_for_contract,df_owner])
                 print('******complete : in pagenation******')
                 if page_key == pre_key:
                     break
+                
     df_owners_for_contract['data_created_at'] = pd.Timestamp.utcnow().isoformat()
     df_owners_for_contract = df_owners_for_contract.reset_index(drop=True)
     return df_owners_for_contract
@@ -102,7 +93,7 @@ def make_request_with_backoff(url, max_retries=10, max_backoff=64):
 
 
 @task(log_prints=True)
-def create_collection_for_owner(owners:list,ALCHEMY_API_KEY:str):
+def create_collection_for_owner(owners:list,ALCHEMY_API_KEY:str) -> pd.DataFrame():
     #getContractsForOwner	CU: 350	ThroughputCU 100
     #Free 330. 3 request/sec
     df_collection_for_owner=pd.DataFrame()
@@ -129,7 +120,7 @@ def create_collection_for_owner(owners:list,ALCHEMY_API_KEY:str):
             data, page_key = future.result()
         
             if data:
-                data_with_info = [{'owner':owner, **item} for item in data]
+                data_with_info = [{'owner_address':owner, **item} for item in data]
                 data_list.extend(data_with_info)
                 print('******complete : no pagenation******')
                 
@@ -137,90 +128,107 @@ def create_collection_for_owner(owners:list,ALCHEMY_API_KEY:str):
                 pre_key = page_key
                 data, page_key = fetch_data(owner, page_key)
                 if data:
-                    data_with_info = [{'owner':owner, **item} for item in data]
+                    data_with_info = [{'owner_address':owner, **item} for item in data]
                     data_list.extend(data_with_info)
                     print('******complete : extend in pagenation******')
                 if page_key == pre_key:
                     break 
-    
-    df_collection_for_owner=pd.DataFrame(data_list).astype(str)
-    df_collection_for_owner['data_created_at'] = pd.Timestamp.utcnow().isoformat()
 
+    df_collection_for_owner=pd.DataFrame(data_list)
+    
     return df_collection_for_owner
 
+# 쿼리문 이용해서 블랙리스트에 포함되어있는 지갑 제거 후 오늘날짜의 전체 거래 중 금액순서로 상위 10% & 거래 금액 1천불 이상 seller
+# return DataFrame -> to_sql로 데일리 고래 순위로 계속 저장, sellerr만 리스트형식:get_top_seller()['seller']로
 @task(log_prints=True)
-def get_db_data(query) -> list:
+def get_top_seller():
     engine=SqlAlchemyConnector.load("gcp-mlops-sql-postgres").get_engine()
     connection = engine.connect()
-    owners=[]
+    current_date = datetime.today()
+    target_date = current_date - timedelta(days=1)
+    date = target_date.strftime('%Y-%m-%d')
     try:
+        query = f"""
+                WITH normal_trx AS (
+                SELECT *
+                FROM dune_nft_trades AS t
+                LEFT JOIN black_list AS b ON t.seller = b.participant OR t.buyer = b.participant 
+                WHERE b.participant IS NULL AND 
+                t.block_time::date = '{date}'
+                )
+                , total_trx_count AS (
+                    SELECT COUNT(*) AS total_count
+                    FROM normal_trx
+                )
+                , selected_trx AS (
+                    SELECT block_time, 
+                        seller,
+                        sum(amount_usd) AS amt
+                    FROM normal_trx
+                    GROUP BY block_time, seller
+                )
+                SELECT block_time, 
+                    ROW_NUMBER() OVER (ORDER BY amt DESC) AS row_num,
+                    seller,
+                    amt
+                FROM selected_trx
+                CROSS JOIN total_trx_count
+                WHERE amt>=1000
+                ORDER BY amt DESC
+                LIMIT (SELECT ROUND(total_count * 0.1) FROM total_trx_count);
+                """
         result = connection.execute(text(query))
         rows=result.fetchall()
-        owners = [row.owner for row in rows]
-        
+        df=pd.DataFrame(rows)
     except Exception as e:
         print("error", e)
-    return owners
+    return df
 
 
+# 쿼리문 이용해서 블랙리스트에 포함되어있는 지갑 제거 후 오늘날짜의 전체 거래 중 금액순서로 상위 10% & 거래 금액 1천불 이상 buyer
+# return DataFrame -> to_sql로 데일리 고래 순위로 계속 저장, buyer만 리스트형식:get_top_buyer()['buyer']로
 @task(log_prints=True)
-def montly_top100(month:str, start, end, limit:int):
+def get_top_buyer():
     engine=SqlAlchemyConnector.load("gcp-mlops-sql-postgres").get_engine()
     connection = engine.connect()
-    df_jun_top100 = pd.DataFrame()
-
+    current_date = datetime.today()
+    target_date = current_date - timedelta(days=1)
+    date = target_date.strftime('%Y-%m-%d')
     try:
-        result = connection.execute(text(f"WITH {month} AS( SELECT * FROM dune_nft_trades WHERE block_time BETWEEN '{start}' AND '{end}') SELECT DISTINCT buyer, sum(amount_usd) amt FROM {month} GROUP BY buyer ORDER BY amt DESC LIMIT {limit};"))
+        query = f"""
+                WITH normal_trx AS (
+                SELECT *
+                FROM dune_nft_trades AS t
+                LEFT JOIN black_list AS b ON t.seller = b.participant OR t.buyer = b.participant 
+                WHERE b.participant IS NULL AND 
+                t.block_time::date = '{date}'
+                )
+                , total_trx_count AS (
+                    SELECT COUNT(*) AS total_count
+                    FROM normal_trx
+                )
+                , selected_trx AS (
+                    SELECT block_time, 
+                        buyer,
+                        sum(amount_usd) AS amt
+                    FROM normal_trx
+                    GROUP BY block_time, buyer
+                )
+                SELECT block_time,
+                    ROW_NUMBER() OVER (ORDER BY amt DESC) AS row_num,
+                    buyer,
+                    amt
+                FROM selected_trx
+                CROSS JOIN total_trx_count
+                WHERE amt>=1000
+                ORDER BY amt DESC
+                LIMIT (SELECT ROUND(total_count * 0.1) FROM total_trx_count);
+                """
+        result = connection.execute(text(query))
         rows=result.fetchall()
-        df_jun_top100['buyer'] = [row.buyer for row in rows]
-        df_jun_top100['amt'] = [row.amt for row in rows]
-
-        print(df_jun_top100,len(df_jun_top100))
+        df=pd.DataFrame(rows)
+        
     except Exception as e:
         print("error", e)
-    return df_jun_top100
+    return df
 
-
-#@task
-# def summarize_nft_attributes():
-#     ALCHEMY_API_KEY=os.getenv('ALCHEMY_API_KEY')
-#     df_slug=pd.read_csv('Pipeline_A/module/util/slug_table.csv',index_col=False)
-#     #collections=df_slug['contract_address']
-#     collections=['0x0e9d6552b85be180d941f1ca73ae3e318d2d4f1f','0x837704ec8dfec198789baf061d6e93b0e1555da6','0x86ba9ec85eebe10a9b01af64e89f9d76d25cea18']
-#     #print(df_slug)
-#     df_summarize_nft_attributes=pd.DataFrame()
-    
-#     data_list=[]
-
-#     def fetch_data(collection):
-#         # time.sleep(0.2)
-#         url = f"https://eth-mainnet.g.alchemy.com/nft/v3/{ALCHEMY_API_KEY}/summarizeNFTAttributes?contractAddress={collection}"
-#         headers = {"accept": "application/json"}
-#         response = requests.get(url, headers=headers)
-#         data = response.json()
-
-#         if response.status_code == 200:
-#             # #print(data)
-#             return data
-#         else:
-#             print(f"{response} error:{collection} {data['error']['message']}")
-#             #print(f"error:{collection}, {response.json()}")
-#             return 
-
-#     with ThreadPoolExecutor(16) as executor:
-#         futures = [executor.submit(fetch_data, collection) for collection in collections]
-        
-#         for index, future in enumerate(futures):
-#             data = future.result()
-#             print(data)
-#             print(type(data))
-#             data_with_info = [{**item} for item in data]
-#             data_list.extend(data_with_info)
-#             #print(data_list)
-#             print(f'******complete : {index} task******')
-            
-
-#     df_summarize_nft_attributes=pd.DataFrame(data_list)
-#     df_summarize_nft_attributes['created_at'] = pd.Timestamp.utcnow().isoformat()
-
-#     return df_summarize_nft_attributes
