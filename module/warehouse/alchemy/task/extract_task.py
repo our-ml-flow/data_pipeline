@@ -138,97 +138,41 @@ def create_collection_for_owner(owners:list,ALCHEMY_API_KEY:str) -> pd.DataFrame
     
     return df_collection_for_owner
 
-# 쿼리문 이용해서 블랙리스트에 포함되어있는 지갑 제거 후 오늘날짜의 전체 거래 중 금액순서로 상위 10% & 거래 금액 1천불 이상 seller
-# return DataFrame -> to_sql로 데일리 고래 순위로 계속 저장, sellerr만 리스트형식:get_top_seller()['seller']로
-@task(log_prints=True)
-def get_top_seller():
+
+def get_top_seller_list():
     engine=SqlAlchemyConnector.load("gcp-mlops-sql-postgres").get_engine()
     connection = engine.connect()
     current_date = datetime.today()
-    target_date = current_date - timedelta(days=1)
+    target_date = current_date - timedelta(days=2)
     date = target_date.strftime('%Y-%m-%d')
     try:
         query = f"""
-                WITH normal_trx AS (
-                SELECT *
-                FROM dune_nft_trades AS t
-                LEFT JOIN black_list AS b ON t.seller = b.participant OR t.buyer = b.participant 
-                WHERE b.participant IS NULL AND 
-                t.block_time::date = '{date}'
-                )
-                , total_trx_count AS (
-                    SELECT COUNT(*) AS total_count
-                    FROM normal_trx
-                )
-                , selected_trx AS (
-                    SELECT block_time, 
-                        seller,
-                        sum(amount_usd) AS amt
-                    FROM normal_trx
-                    GROUP BY block_time, seller
-                )
-                SELECT block_time, 
-                    ROW_NUMBER() OVER (ORDER BY amt DESC) AS row_num,
-                    seller,
-                    amt
-                FROM selected_trx
-                CROSS JOIN total_trx_count
-                WHERE amt>=1000
-                ORDER BY amt DESC
-                LIMIT (SELECT ROUND(total_count * 0.1) FROM total_trx_count);
+                SELECT address FROM daily_whale_100 
+                WHERE sold_rank <=100 AND date>='{date}';
                 """
         result = connection.execute(text(query))
         rows=result.fetchall()
-        df=pd.DataFrame(rows)
+        sellers=[row[0] for row in rows]
     except Exception as e:
         print("error", e)
-    return df
+    return sellers
 
 
-# 쿼리문 이용해서 블랙리스트에 포함되어있는 지갑 제거 후 오늘날짜의 전체 거래 중 금액순서로 상위 10% & 거래 금액 1천불 이상 buyer
-# return DataFrame -> to_sql로 데일리 고래 순위로 계속 저장, buyer만 리스트형식:get_top_buyer()['buyer']로
-@task(log_prints=True)
-def get_top_buyer():
+def get_top_buyer_list():
     engine=SqlAlchemyConnector.load("gcp-mlops-sql-postgres").get_engine()
     connection = engine.connect()
     current_date = datetime.today()
-    target_date = current_date - timedelta(days=1)
+    target_date = current_date - timedelta(days=2)
     date = target_date.strftime('%Y-%m-%d')
     try:
         query = f"""
-                WITH normal_trx AS (
-                SELECT *
-                FROM dune_nft_trades AS t
-                LEFT JOIN black_list AS b ON t.seller = b.participant OR t.buyer = b.participant 
-                WHERE b.participant IS NULL AND 
-                t.block_time::date = '{date}'
-                )
-                , total_trx_count AS (
-                    SELECT COUNT(*) AS total_count
-                    FROM normal_trx
-                )
-                , selected_trx AS (
-                    SELECT block_time, 
-                        buyer,
-                        sum(amount_usd) AS amt
-                    FROM normal_trx
-                    GROUP BY block_time, buyer
-                )
-                SELECT block_time,
-                    ROW_NUMBER() OVER (ORDER BY amt DESC) AS row_num,
-                    buyer,
-                    amt
-                FROM selected_trx
-                CROSS JOIN total_trx_count
-                WHERE amt>=1000
-                ORDER BY amt DESC
-                LIMIT (SELECT ROUND(total_count * 0.1) FROM total_trx_count);
+                SELECT address FROM daily_whale_100 
+                WHERE bought_rank <=100 AND date>='{date}';
                 """
         result = connection.execute(text(query))
         rows=result.fetchall()
-        df=pd.DataFrame(rows)
-        
+        buyers=[row[0] for row in rows]
     except Exception as e:
         print("error", e)
-    return df
+    return buyers
 
