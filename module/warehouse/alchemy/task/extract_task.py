@@ -1,7 +1,7 @@
 import pandas as pd
 from concurrent.futures import ThreadPoolExecutor
 from prefect import task
-from datetime import timezone,datetime,timedelta
+from datetime import datetime,timedelta
 import time
 import requests
 import json
@@ -143,7 +143,7 @@ def get_top_seller_list():
     engine=SqlAlchemyConnector.load("gcp-mlops-sql-postgres").get_engine()
     connection = engine.connect()
     current_date = datetime.today()
-    target_date = current_date - timedelta(days=2)
+    target_date = current_date - timedelta(days=1)
     date = target_date.strftime('%Y-%m-%d')
     try:
         query = f"""
@@ -162,7 +162,7 @@ def get_top_buyer_list():
     engine=SqlAlchemyConnector.load("gcp-mlops-sql-postgres").get_engine()
     connection = engine.connect()
     current_date = datetime.today()
-    target_date = current_date - timedelta(days=2)
+    target_date = current_date - timedelta(days=1)
     date = target_date.strftime('%Y-%m-%d')
     try:
         query = f"""
