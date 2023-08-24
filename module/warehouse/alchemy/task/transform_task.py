@@ -13,11 +13,12 @@ def preprocess_collection_for_owner(df):
                     'isSpam':'is_spam','displayNft':'display_nft'}
 
     df.rename(columns=new_col_name, inplace=True)
-    df.drop(columns=['bannerImageUrl'], inplace=True)
 
+    if 'bannerImageUrl' in df.columns:
+        df.drop(columns=['bannerImageUrl'], inplace=True)
+    
     df['total_balance']=pd.to_numeric(df['total_balance'], errors='coerce')
     df['num_distinct_tokens_owned']=pd.to_numeric(df['num_distinct_tokens_owned'], errors='coerce')
-    
     df['data_created_at'] = target_date
     
     return df
