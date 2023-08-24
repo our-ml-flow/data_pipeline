@@ -5,7 +5,7 @@ from datetime import datetime,timedelta
 @task(log_prints=True)
 def preprocess_collection_for_owner(df):
     current_date = datetime.today()
-    target_date = current_date - timedelta(days=2)
+    target_date = current_date - timedelta(days=1)
 
     new_col_name = {'name':'collection_name','openSeaSlug':'opensea_slug','openSea':'opensea_floor_price',
                     'externalUrl':'external_url','twitterUsername':'twitter_username','discordUrl':'discord_url',

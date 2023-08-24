@@ -62,6 +62,6 @@ if __name__=='__main__':
         name='Alchemy_daily_warehouse_flow_Deployment',
         version=1.3,
         work_queue_name='alchemy-agent',
-        schedule=(CronSchedule(cron="00 11 * * *", timezone="Asia/Seoul"))
+        schedule=(CronSchedule(cron="00 12 * * *", timezone="Asia/Seoul"))
     )
     deployment.apply()
