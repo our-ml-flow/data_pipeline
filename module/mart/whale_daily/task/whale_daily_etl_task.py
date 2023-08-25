@@ -77,7 +77,7 @@ def extract_daily_whale(engine) -> pd.DataFrame|None:
 @task(log_prints=True)
 def load_daily_whale(engine, daily_whale_df: pd.DataFrame = None):
     try:
-        if daily_whale_df == None:
+        if daily_whale_df.empty:
             raise ValueError
         
         daily_whale_df.to_sql("daily_whale_100", engine, if_exists='append', index=False)
