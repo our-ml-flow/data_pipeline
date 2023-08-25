@@ -74,7 +74,7 @@ def extract_daily_whale(engine) -> pd.DataFrame|None:
     finally:
         return result    
 
-@task(log_print=True)
+@task(log_prints=True)
 def load_daily_whale(engine, daily_whale_df: pd.DataFrame|None):
     try:
         if daily_whale_df == None:
