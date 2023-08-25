@@ -1,0 +1,1 @@
+from .whale_daily_etl_task import extract_daily_whale, load_daily_whale
