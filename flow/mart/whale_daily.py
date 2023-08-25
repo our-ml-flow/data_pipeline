@@ -27,7 +27,7 @@ if __name__=="__main__":
         flow=wash_trade,
         name="Daily whale Flow Deployment",
         version=1.0,
-        work_queue_name="dune-agent",
+        work_queue_name="whale-agent",
         schedule=(CronSchedule(cron="45 10 * * *", timezone="Asia/Seoul"))
     )
     
