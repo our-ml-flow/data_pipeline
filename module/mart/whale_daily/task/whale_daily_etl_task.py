@@ -23,7 +23,7 @@ def extract_daily_whale(engine) -> pd.DataFrame|None:
                     buyer AS address, 
                     SUM(amount_usd) AS total_bought_amount
                 FROM dune_nft_trades
-                WHERE DATE(block_time) = DATE('f{today}')
+                WHERE DATE(block_time) = DATE('{today}')
                 GROUP BY block_time, buyer
                 ) buy
             FULL OUTER JOIN (
@@ -32,7 +32,7 @@ def extract_daily_whale(engine) -> pd.DataFrame|None:
                     seller AS address, 
                     SUM(amount_usd) AS total_sold_amount
                 FROM dune_nft_trades
-                WHERE DATE(block_time) = DATE('f{today}')
+                WHERE DATE(block_time) = DATE('{today}')
                 GROUP BY block_time, seller
                 ) sell
             ON buy.block_time = sell.block_time 

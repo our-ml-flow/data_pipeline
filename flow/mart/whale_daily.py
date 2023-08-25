@@ -26,7 +26,7 @@ if __name__=="__main__":
     deployment = Deployment.build_from_flow(
         flow=wash_trade,
         name="Daily whale Flow Deployment",
-        version=1.0,
+        version=1.1,
         work_queue_name="whale-agent",
         schedule=(CronSchedule(cron="45 10 * * *", timezone="Asia/Seoul"))
     )
