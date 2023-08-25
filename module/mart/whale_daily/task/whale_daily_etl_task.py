@@ -75,7 +75,7 @@ def extract_daily_whale(engine) -> pd.DataFrame|None:
         return result    
 
 @task(log_prints=True)
-def load_daily_whale(engine, daily_whale_df: pd.DataFrame|None):
+def load_daily_whale(engine, daily_whale_df: pd.DataFrame = None):
     try:
         if daily_whale_df == None:
             raise ValueError
