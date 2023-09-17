@@ -35,7 +35,7 @@ Link : [Alchemy](https://www.alchemy.com/)
 
 ## 데이터 전처리
 
-## 파이프라인 배포
+### 파이프라인 배포
 생성한 Task들을 하나의 Flow로 묶어 Flow를 배포합니다.
 
 1. Flow 파일 실행
