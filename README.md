@@ -18,24 +18,20 @@ pip install -r requirements.txt
     └── warehouse
 ```
 
-## 데이터 수집
-### Dune API
-Link : [Dune API](https://dune.com/api)
+## 사용 데이터
+### API Link
+1. Dune : [Dune API](https://dune.com/api)
+  > 수집 데이터에 대한 간략한 설명 
+2. Alchemy : [Alchemy](https://www.alchemy.com/)
+  > 수집 데이터에 대한 간략한 설명  
 
-> 수집 데이터 내역
-  -
-  - 
+### ETL
+![데이터](https://github.com/our-ml-flow/data_pipeline/assets/66200628/ab7f025a-e86b-4cc7-baf0-105a6b0af042)
 
-### Alchemy
-Link : [Alchemy](https://www.alchemy.com/)
+### ERD
+![erd](https://github.com/our-ml-flow/data_pipeline/assets/66200628/caef4ce4-01d7-4e49-8fcd-7dc7d099d70a)
 
-> 수집 데이터 내역
-  -
-  - 
-
-## 데이터 전처리
-
-### 파이프라인 배포
+## 파이프라인 배포
 생성한 Task들을 하나의 Flow로 묶어 Flow를 배포합니다.
 
 1. Flow 파일 실행
