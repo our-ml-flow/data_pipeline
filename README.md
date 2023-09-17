@@ -32,3 +32,18 @@ Link : [Alchemy](https://www.alchemy.com/)
 > 수집 데이터 내역
   -
   - 
+
+## 데이터 전처리
+
+## 파이프라인 배포
+생성한 Task들을 하나의 Flow로 묶어 Flow를 배포합니다.
+
+1. Flow 파일 실행
+```
+python flow_file_name.py
+```
+2. Agent 실행
+```
+prefect agent start --work-queue "Agent-Name"
+```
+
