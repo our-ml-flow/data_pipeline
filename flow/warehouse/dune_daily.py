@@ -15,7 +15,7 @@ from datetime import datetime, timedelta
 
 import traceback
 
-@flow(name='Dune_daily_warehouse_flow', log_prints=True)
+@flow(name='Dune_Daily_Warehouse_Flow', log_prints=True)
 def dune_nft_trades():
     json_block = JSON.load('telegram')
     
@@ -99,8 +99,8 @@ def dune_nft_trades():
 if __name__=="__main__":
     deployment = Deployment.build_from_flow(
         flow=dune_nft_trades,
-        name="LSH: Test Dune Nft Trades Flow Deployment",
-        version=0.0,
+        name="Dune Nft Trades Flow Deployment",
+        version=1.0,
         work_queue_name="dune-agent",
         schedule=(CronSchedule(cron="40 09 * * *", timezone="Asia/Seoul"))
     )
