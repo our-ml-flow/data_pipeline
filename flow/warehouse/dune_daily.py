@@ -100,7 +100,7 @@ if __name__=="__main__":
     deployment = Deployment.build_from_flow(
         flow=dune_nft_trades,
         name="LSH: Test Dune Nft Trades Flow Deployment",
-        version='Test',
+        version=0.0,
         work_queue_name="dune-agent",
         schedule=(CronSchedule(cron="40 09 * * *", timezone="Asia/Seoul"))
     )
